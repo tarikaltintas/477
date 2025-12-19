@@ -81,3 +81,63 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     input("Press Enter to exit...")
+
+# --- WEKA İÇİN DOSYA KAYDETME ---
+print("\nWeka için dosya hazırlanıyor...")
+# Görselleştirme için ölçeklenmemiş (orijinal) veriyi kullanalım ki rakamlar anlamlı olsun
+df_weka = X_imputed.copy()
+df_weka['HighCrime'] = y_class  # Hedef sınıfı ekle
+
+# Dosyayı kaydet
+df_weka.to_csv("weka_ready.csv", index=False)
+print("BAŞARILI! 'weka_ready.csv' dosyası indirilenler klasörüne kaydedildi.")
+print("Şimdi bu dosyayı Weka'da sorunsuz açabilirsiniz.")
+
+
+
+
+import matplotlib.pyplot as plt
+
+# --- FEATURE IMPORTANCE (SAYFA DOLDURMAK İÇİN) ---
+print("\nÖzellik Önem Düzeyleri Hesaplanıyor...")
+
+# Logistic Regression modelini bul (model listesinin ilk sırasında tanımlamıştık)
+log_reg_model = models["Logistic Regression"]
+
+# Katsayıları al
+importance = log_reg_model.coef_[0]
+feature_names = X.columns
+
+# Pandas serisine çevirip sıralayalım
+feat_importances = pd.Series(importance, index=feature_names)
+top_features = feat_importances.abs().nlargest(10) # En etkili 10 özellik (Pozitif veya Negatif)
+
+# Grafiği Çiz
+plt.figure(figsize=(10, 6))
+top_features.plot(kind='barh', color='teal')
+plt.title('Top 10 Most Important Factors Predicting High Crime')
+plt.xlabel('Impact (Coefficient Value)')
+plt.ylabel('Socio-Economic Factors')
+plt.tight_layout()
+plt.savefig('feature_importance.png')
+print("Grafik kaydedildi: feature_importance.png")
+
+
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+# --- CONFUSION MATRIX ÇİZİMİ ---
+print("\nConfusion Matrixler Çiziliyor...")
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+for i, (name, model) in enumerate(models.items()):
+    cm = confusion_matrix(y_test, model.predict(X_test))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Low Crime", "High Crime"])
+    disp.plot(ax=axes[i], cmap='Blues', values_format='d')
+    axes[i].set_title(f"{name} Confusion Matrix")
+
+plt.tight_layout()
+plt.savefig('confusion_matrices.png')
+print("Grafik kaydedildi: confusion_matrices.png")
+plt.show()
+plt.show()
